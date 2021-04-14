@@ -568,10 +568,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             :param strict_permissions: a boolean determining whether to fail or ignore 403 error codes
 
         '''
-        instances = self._get_instances_by_region(regions, filters, strict_permissions)
-        for includes in includes_entries_matching:
-            filter = ansible_dict_to_boto3_filter_list(includes)
-            instances += self._get_instances_by_region(regions, filter, strict_permissions)
+        instances = []
+        all_filters = [filters] + includes_entries_matching
+        for f in all_filters:
+            instances += self._get_instances_by_region(
+                regions,
+                ansible_dict_to_boto3_filter_list(f),
+                strict_permissions)
 
         instances = sorted(instances, key=lambda x: x['InstanceId'])
 
@@ -680,7 +683,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
         # get user specifications
         regions = self.get_option('regions')
-        filters = ansible_dict_to_boto3_filter_list(self.get_option('filters'))
+        filters = self.get_option('filters')
         includes_entries_matching = self.get_option('includes_entries_matching')
         hostnames = self.get_option('hostnames')
         strict_permissions = self.get_option('strict_permissions')
